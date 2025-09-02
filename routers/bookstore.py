@@ -219,13 +219,13 @@ async def delete_book(book_id: int,
 #     return len(books_to_add)
 
 
-@router.post("/books/upload")
-def upload_books(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=400, detail="File must be a CSV.")
+# @router.post("/books/upload")
+# def upload_books(file: UploadFile = File(...), db: Session = Depends(get_db)):
+#     if not file.filename.endswith('.csv'):
+#         raise HTTPException(status_code=400, detail="File must be a CSV.")
     
-    count = process_csv(file, db)
-    return {"inserted": count}
+#     count = process_csv(file, db)
+#     return {"inserted": count}
 
 
 

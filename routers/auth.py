@@ -6,12 +6,12 @@ from fastapi import FastAPI, Depends, HTTPException, APIRouter
 from pydantic import BaseModel
 from typing import Optional
 import models
-from passlib.context import CryptContext
+from passlib.context import CryptContext # type: ignore
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from datetime import datetime, timedelta
-from jose import jwt, JWTError
+from jose import jwt, JWTError # type: ignore
 
 SECRET_KEY = "ioihuahsdiuya876td87aysd98"
 ALGORITHM = "HS256"
