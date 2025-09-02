@@ -11,6 +11,7 @@ import models, csv
 from schemas import BookCreate, BookUpdate  
 from database import engine, SessionLocal
 from .auth import get_current_user, get_user_exception
+from io import StringIO
 
 
 
@@ -49,21 +50,6 @@ async def read_all(db: Session = Depends(get_db)):
     return db.query(models.BookStore).all()
 
 
-
-# @app.get("/bookstore/user")
-# async def read_all_user(user: dict= Depends(get_current_user), db: Session = Depends(get_db)):
-#     if user is None:
-#         raise get_user_exception()
-#     return db.query(models.BookStore)\
-#         .filter(models.BookStore.user_id == user.get("id"))\
-#         .all()    
-#     return books 
-
-# @app.get("/bookstore/user")
-# async def read_all_user( user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-#     return db.query(models.BookStore)\
-#         .filter(models.BookStore.user_id == user.get("id"))\
-#         .all()
    
 @router.get("/bookstore/user")
 async def read_all_user(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -197,35 +183,48 @@ async def delete_book(book_id: int,
     return successful_response(200)
 
 
-# def process_csv(file: UploadFile, db: Session) -> int:
-#     content = file.file.read().decode('utf-8').splitlines()
-#     reader = csv.DictReader(content)
+
+@router.post("/books/upload")
+async def upload_books_csv(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)):
     
-#     books_to_add = []
-#     for row in reader:
-#         book = BookStore(
-#             title=row['title'],
-#             author=row['author'],
-#             price=row['price'],
-#             published_date=row['published_date'],
-#             created_at=row['created_at'],
-#             updated_at=row['updated_at'],
-#             isbn=row.get('isbn')
-#         )
-#         books_to_add.append(book)
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files are allowed.")
 
-#     db.bulk_save_objects(books_to_add)
-#     db.commit()
-#     return len(books_to_add)
+    # Read and decode the file
+    contents = await file.read()
+    csv_data = contents.decode("utf-8")
+    reader = csv.DictReader(StringIO(csv_data))
+
+    books_to_add = []
+    for row in reader:
+        try:
+            book = models.BookStore(
+                title=row["title"],
+                author=row["author"],
+                price=float(row["price"]),
+                published_date=datetime.fromisoformat(row["published_date"]),
+                created_at=datetime.fromisoformat(row["created_at"]),
+                updated_at=datetime.fromisoformat(row["updated_at"]),
+                user_id=user.get("id"),
+            )
+            books_to_add.append(book)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error processing row: {row}. Error: {e}")
+
+    db.bulk_save_objects(books_to_add)
+    db.commit()
+
+    return {"inserted": len(books_to_add)}
 
 
-# @router.post("/books/upload")
-# def upload_books(file: UploadFile = File(...), db: Session = Depends(get_db)):
-#     if not file.filename.endswith('.csv'):
-#         raise HTTPException(status_code=400, detail="File must be a CSV.")
-    
-#     count = process_csv(file, db)
-#     return {"inserted": count}
+
+
+
+
+
 
 
 
